@@ -4,33 +4,45 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class Application {
-    // Нужно указывать базовое исключение,
-    // потому что выполнение запросов может привести к исключениям
     public static void main(String[] args) throws SQLException {
-        // Создаем соединение с базой в памяти
-        // База создается прямо во время выполнения этой строчки
-        // Здесь mem означает, что подключение происходит к базе данных в памяти,
-        // а hexlet_test — это имя базы данных
-        try(var conn = DriverManager.getConnection("jdbc:h2:mem:hexlet_test")) {
+
+        try (var conn = DriverManager.getConnection("jdbc:h2:mem:hexlet_test")) {
+
             var sql = "CREATE TABLE users (id BIGINT PRIMARY KEY AUTO_INCREMENT, username VARCHAR(255), phone VARCHAR(255))";
-            try(var statement = conn.createStatement()) {
+            try (var statement = conn.createStatement()) {
                 statement.execute(sql);
             }
 
-            var sql2 = "INSERT INTO users (username, phone) VALUES ('tommy', '123456789')";
-            try(var statement2 = conn.createStatement()) {
-                statement2.executeUpdate(sql2);
+            var userDAO = new UserDAO(conn);
+
+            var user1 = new User("Tommy", "123456789");
+            var user2 = new User("Maria", "44444444");
+            var user3 = new User("John", "55555555");
+
+            userDAO.save(user1);
+            userDAO.save(user2);
+            userDAO.save(user3);
+
+            System.out.println("Сохраненные пользователи:");
+            System.out.println(user1);
+            System.out.println(user2);
+            System.out.println(user3);
+
+            System.out.println("\nУдаляем пользователя с ID=2...");
+            userDAO.delete(2L);
+
+            var found = userDAO.find(2L);
+            if (found.isEmpty()) {
+                System.out.println("Пользователь с ID=2 не найден (успешно удален)");
             }
 
-            var sql3 = "SELECT * FROM users";
-            try(var statement3 = conn.createStatement()) {
-                var resultSet = statement3.executeQuery(sql3);
-                while (resultSet.next()) {
-                    System.out.println(resultSet.getString("username"));
-                    System.out.println(resultSet.getString("phone"));
-                }
+            System.out.println("\nУдаляем пользователя " + user1.getUsername() + "...");
+            userDAO.delete(user1);
+
+            var found2 = userDAO.find(1L);
+            if (found2.isEmpty()) {
+                System.out.println("Пользователь с ID=1 не найден");
             }
         }
-
     }
 }
